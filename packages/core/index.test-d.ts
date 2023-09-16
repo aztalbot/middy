@@ -190,3 +190,26 @@ const typeErrorMiddleware = {
 
 customCtxHandler = customCtxHandler.use(typeErrorMiddleware)
 expectType<MutableContextHandler>(customCtxHandler)
+
+// make sure typescript let's use the AbortSignal passed in third argument
+const handlerWithAbortSignal = middy<APIGatewayProxyEvent, APIGatewayProxyResult>().handler(async (event, context, { signal }) => {
+  expectType<APIGatewayProxyEvent>(event);
+  expectType<Context>(context);
+  expectType<AbortSignal>(signal);
+  return {
+    statusCode: 200,
+    body: "",
+  }
+})
+expectType<Handler>(handlerWithAbortSignal)
+
+const middyHandlerWithAbortSignal = middy<APIGatewayProxyEvent, APIGatewayProxyResult>(async (event, context, { signal }) => {
+  expectType<APIGatewayProxyEvent>(event);
+  expectType<Context>(context);
+  expectType<AbortSignal>(signal);
+  return {
+    statusCode: 200,
+    body: "",
+  }
+})
+expectType<Handler>(middyHandlerWithAbortSignal)

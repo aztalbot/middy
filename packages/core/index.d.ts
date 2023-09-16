@@ -57,6 +57,8 @@ export interface MiddlewareObj<
   onError?: MiddlewareFn<TEvent, TResult, TErr, TContext>
 }
 
+interface DefaultPlugins { signal: AbortSignal }
+
 // The AWS provided Handler type uses void | Promise<TResult> so we have no choice but to follow and suppress the linter warning
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 type MiddyInputHandler<
@@ -74,23 +76,30 @@ type MiddyInputPromiseHandler<
   TResult,
   TContext extends LambdaContext = LambdaContext
 > = (event: TEvent, context: TContext) => Promise<TResult>
+type MiddyInputPromisePluginHandler<
+  TEvent,
+  TResult,
+  TContext extends LambdaContext = LambdaContext,
+  TPlugin extends DefaultPlugins = DefaultPlugins
+> = (event: TEvent, context: TContext, plugins: TPlugin) => Promise<TResult>
 
 export interface MiddyfiedHandler<
   TEvent = any,
   TResult = any,
   TErr = Error,
-  TContext extends LambdaContext = LambdaContext
+  TContext extends LambdaContext = LambdaContext,
+  TPlugin extends DefaultPlugins = DefaultPlugins
 > extends MiddyInputHandler<TEvent, TResult, TContext>,
   MiddyInputPromiseHandler<TEvent, TResult, TContext> {
   use: UseFn<TEvent, TResult, TErr, TContext>
   before: AttachMiddlewareFn<TEvent, TResult, TErr, TContext>
   after: AttachMiddlewareFn<TEvent, TResult, TErr, TContext>
   onError: AttachMiddlewareFn<TEvent, TResult, TErr, TContext>
-  handler: <TAdditional>(
-    handler: MiddlewareHandler<
+  handler: <TAdditional, THandler = MiddyInputPromisePluginHandler<TEvent & TAdditional, TResult, TContext, TPlugin>>(
+    handler: THandler extends LambdaHandler<infer TEvent, infer TResult> ? MiddlewareHandler<
     LambdaHandler<TEvent & TAdditional, TResult>,
     TContext
-    >
+    > : MiddyInputPromisePluginHandler<TEvent & TAdditional, TResult, TContext, TPlugin>
   ) => MiddyfiedHandler<TEvent, TResult, TErr, TContext>
 }
 
@@ -149,9 +158,12 @@ declare function middy<
   TEvent = unknown,
   TResult = any,
   TErr = Error,
-  TContext extends LambdaContext = LambdaContext
+  TContext extends LambdaContext = LambdaContext,
+  TPlugin extends DefaultPlugins = DefaultPlugins,
+  THandler = MiddyInputPromisePluginHandler<TEvent, TResult, TContext, TPlugin>
 > (
-  handler?: MiddlewareHandler<LambdaHandler<TEvent, TResult>, TContext>,
+  handler?: THandler extends LambdaHandler<TEvent, TResult> ? MiddlewareHandler<LambdaHandler<TEvent, TResult>, TContext>
+     : MiddyInputPromisePluginHandler<TEvent, TResult, TContext, TPlugin>,
   plugin?: PluginObject
 ): MiddyfiedHandler<TEvent, TResult, TErr, TContext>
 
