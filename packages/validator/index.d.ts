@@ -1,4 +1,5 @@
 import middy from '@middy/core'
+import type { FromSchema } from 'json-schema-to-ts'
 
 interface Options {
   eventSchema?: Function | any
