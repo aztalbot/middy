@@ -5,7 +5,8 @@ const defaults = {
   contextSchema: undefined,
   responseSchema: undefined,
   defaultLanguage: 'en',
-  languages: {}
+  languages: {},
+  createErrorFunc: createError
 }
 
 const validatorMiddleware = (opts = {}) => {
@@ -14,7 +15,8 @@ const validatorMiddleware = (opts = {}) => {
     contextSchema,
     responseSchema,
     defaultLanguage,
-    languages
+    languages,
+    createErrorFunc
   } = { ...defaults, ...opts }
 
   const validatorMiddlewareBefore = async (request) => {
@@ -28,7 +30,7 @@ const validatorMiddleware = (opts = {}) => {
         localize?.(eventSchema.errors)
 
         // Bad Request
-        throw createError(400, 'Event object failed validation', {
+        throw createErrorFunc(400, 'Event object failed validation', {
           cause: eventSchema.errors
         })
       }
@@ -39,7 +41,7 @@ const validatorMiddleware = (opts = {}) => {
 
       if (!validContext) {
         // Internal Server Error
-        throw createError(500, 'Context object failed validation', {
+        throw createErrorFunc(500, 'Context object failed validation', {
           cause: contextSchema.errors
         })
       }
@@ -51,7 +53,7 @@ const validatorMiddleware = (opts = {}) => {
 
     if (!validResponse) {
       // Internal Server Error
-      throw createError(500, 'Response object failed validation', {
+      throw createErrorFunc(500, 'Response object failed validation', {
         cause: responseSchema.errors
       })
     }
